@@ -2,38 +2,43 @@ import numpy as np
 import cv2
 from matplotlib import pyplot as plt
 
-img1 = cv2.imread('box.png',0)          # queryImage
-img2 = cv2.imread('box_in_scene.png',0) # trainImage
+img = cv2.imread('scans/2019_03_04/zamalowane_0004.jpg', 0)
 
-# Initiate SIFT detector
-sift = sift = cv2.xfeatures2d.SIFT_create()
+#img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
-# find the keypoints and descriptors with SIFT
-kp1, des1 = sift.detectAndCompute(img1,None)
-kp2, des2 = sift.detectAndCompute(img2,None)
+ret,thresh5 = cv2.threshold(img ,230,255    , cv2.THRESH_TOZERO)
+titles = ['Original Image','BINARY','BINARY_INV','TRUNC','TOZERO','TOZERO_INV']
 
-# FLANN parameters
-FLANN_INDEX_KDTREE = 0
-index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
-search_params = dict(checks=50)   # or pass empty dictionary
 
-flann = cv2.FlannBasedMatcher(index_params,search_params)
 
-matches = flann.knnMatch(des1,des2,k=2)
 
-# Need to draw only good matches, so create a mask
-matchesMask = [[0,0] for i in xrange(len(matches))]
 
-# ratio test as per Lowe's paper
-for i,(m,n) in enumerate(matches):
-    if m.distance < 0.7*n.distance:
-        matchesMask[i]=[1,0]
+edges = cv2.Canny(thresh5, 200, 210, apertureSize = 3)
+plt.imshow(edges)
+plt.show()
 
-draw_params = dict(matchColor = (0,255,0),
-                   singlePointColor = (255,0,0),
-                   matchesMask = matchesMask,
-                   flags = 0)
+lines = cv2.HoughLines(edges, 1, np.pi/180, 200)
 
-img3 = cv2.drawMatchesKnn(img1,kp1,img2,kp2,matches,None,**draw_params)
+plt.show()
+for r, theta in lines[0]:
 
-plt.imshow(img3,),plt.show()
+    a = np.cos(theta)
+
+    b = np.sin(theta)
+
+    x0 = a * r
+
+    y0 = b * r
+
+    x1 = int(x0 + 1000 * (-b))
+
+    y1 = int(y0 + 1000 * (a))
+    x2 = int(x0 - 1000 * (-b))
+
+    y2 = int(y0 - 1000 * (a))
+
+    cv2.line(img, (x1, y1), (x2, y2), (0, 0, 255), 2)
+
+
+
+plt.imshow(img,),plt.show()
